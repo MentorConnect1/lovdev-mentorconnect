@@ -243,6 +243,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ notifications });
   },
 
+  addResource: (resource) => {
+    const resources = [...get().resources, resource];
+    localStorage.setItem('mc_resources', JSON.stringify(resources));
+    set({ resources });
+  },
+
   logout: () => {
     localStorage.removeItem('mc_current_user');
     set({ currentUser: null, activePage: 'landing', activeConvoId: null, conversations: [], notifications: [], messages: {} });
