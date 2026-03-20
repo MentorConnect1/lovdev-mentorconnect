@@ -4,6 +4,9 @@ interface PhoneViewWrapperProps {
   children: React.ReactNode;
 }
 
+const PHONE_W = 390;
+const PHONE_H = 844;
+
 const PhoneViewWrapper: React.FC<PhoneViewWrapperProps> = ({ children }) => {
   const [phoneView, setPhoneView] = useState(false);
 
@@ -21,27 +24,39 @@ const PhoneViewWrapper: React.FC<PhoneViewWrapperProps> = ({ children }) => {
   if (!phoneView) return <>{children}</>;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 p-8">
+    <div className="min-h-screen flex items-center justify-center p-8" style={{ background: 'hsl(220 14% 14%)' }}>
       <div className="relative">
         {/* Phone frame */}
         <div
-          className="rounded-[3rem] border-[6px] border-gray-800 overflow-hidden shadow-2xl"
+          className="rounded-[3rem] border-[6px] overflow-hidden relative"
           style={{
-            width: 390,
-            height: 844,
+            width: PHONE_W,
+            height: PHONE_H,
+            borderColor: 'hsl(220 10% 22%)',
             background: 'hsl(var(--background))',
+            boxShadow: '0 24px 80px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05)',
           }}
         >
-          {/* Notch */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-36 h-7 bg-gray-800 rounded-b-2xl z-[100]" />
-          {/* Content */}
-          <div className="w-full h-full overflow-auto pt-7">
-            {children}
+          {/* Notch / Dynamic Island */}
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-6 rounded-full z-[100]" style={{ background: 'hsl(220 10% 10%)' }} />
+
+          {/* Scaled content viewport */}
+          <div
+            className="origin-top-left overflow-auto"
+            style={{
+              width: PHONE_W - 12,
+              height: PHONE_H - 12,
+              paddingTop: 32,
+            }}
+          >
+            <div style={{ width: PHONE_W - 12, minHeight: PHONE_H - 44 }}>
+              {children}
+            </div>
           </div>
         </div>
         {/* Label */}
-        <div className="text-center mt-4 text-gray-400 text-sm font-medium">
-          Phone Preview — <kbd className="bg-gray-700 px-2 py-0.5 rounded text-xs text-gray-300">Ctrl+Shift+E</kbd> to exit
+        <div className="text-center mt-4 text-sm font-medium" style={{ color: 'hsl(220 10% 50%)' }}>
+          Phone Preview — <kbd className="px-2 py-0.5 rounded text-xs" style={{ background: 'hsl(220 10% 22%)', color: 'hsl(220 10% 65%)' }}>Ctrl+Shift+E</kbd> to exit
         </div>
       </div>
     </div>
