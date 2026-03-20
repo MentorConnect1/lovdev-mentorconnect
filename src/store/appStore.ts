@@ -91,6 +91,7 @@ interface AppState {
   markAllNotifsRead: () => void;
   deleteNotification: (id: string) => void;
   addNotification: (notif: Notification) => void;
+  addResource: (resource: Resource) => void;
   logout: () => void;
 }
 
@@ -240,6 +241,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     const notifications = [notif, ...get().notifications];
     localStorage.setItem('mc_notifications', JSON.stringify(notifications));
     set({ notifications });
+  },
+
+  addResource: (resource) => {
+    const resources = [...get().resources, resource];
+    localStorage.setItem('mc_resources', JSON.stringify(resources));
+    set({ resources });
   },
 
   logout: () => {

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useAppStore } from '@/store/appStore';
-import { Users, Scale, MessageCircle, Bell, BookOpen, Settings, Sparkles } from 'lucide-react';
+import { Users, Scale, MessageCircle, Bell, BookOpen, Settings, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import MentorsPage from './MentorsPage';
 import JudgesPage from './JudgesPage';
 import MessagesPage from './MessagesPage';
@@ -13,13 +13,28 @@ const NAV_ITEMS = [
   { id: 'mentors', label: 'Mentors', icon: Users },
   { id: 'judges', label: 'Judges', icon: Scale },
   { id: 'messages', label: 'Messages', icon: MessageCircle },
-  { id: 'notifications', label: 'Alerts', icon: Bell },
+  { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'resources', label: 'Resources', icon: BookOpen },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
+const PAGE_COMPONENTS: Record<string, React.FC> = {
+  mentors: MentorsPage,
+  judges: JudgesPage,
+  messages: MessagesPage,
+  notifications: NotificationsPage,
+  resources: ResourcesPage,
+  settings: SettingsPage,
+};
+
 const AppShell = () => {
   const { activePage, setActivePage, currentUser, conversations, notifications } = useAppStore();
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const startXRef = useRef(0);
+  const startYRef = useRef(0);
+  const didSwipeRef = useRef(false);
 
   const unreadMsgs = conversations.filter(c => c.unread_by?.includes(currentUser?.email || '')).length;
   const unreadNotifs = notifications.filter(n => n.user_email === currentUser?.email && !n.read).length;
@@ -30,19 +45,52 @@ const AppShell = () => {
     return 0;
   };
 
+  // Get current page index for swiping
+  const pageIds = NAV_ITEMS.map(n => n.id);
+  const currentIndex = pageIds.indexOf(activePage);
+  const effectiveIndex = currentIndex >= 0 ? currentIndex : 0;
+
+  // Swipe handlers
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    startXRef.current = e.clientX;
+    startYRef.current = e.clientY;
+    setIsDragging(true);
+    didSwipeRef.current = false;
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+  }, []);
+
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isDragging) return;
+    const dx = e.clientX - startXRef.current;
+    const dy = e.clientY - startYRef.current;
+    if (!didSwipeRef.current && Math.abs(dy) > Math.abs(dx)) {
+      setIsDragging(false);
+      return;
+    }
+    didSwipeRef.current = true;
+    setDragOffset(dx);
+  }, [isDragging]);
+
+  const onPointerUp = useCallback(() => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    const trackWidth = trackRef.current?.offsetWidth || 400;
+    const threshold = trackWidth * 0.15;
+
+    if (Math.abs(dragOffset) > threshold) {
+      const newIdx = dragOffset < 0
+        ? Math.min(effectiveIndex + 1, pageIds.length - 1)
+        : Math.max(effectiveIndex - 1, 0);
+      setActivePage(pageIds[newIdx]);
+    }
+    setDragOffset(0);
+  }, [isDragging, dragOffset, effectiveIndex, pageIds, setActivePage]);
+
   if (activePage === 'chat') return <ChatPage />;
 
-  const renderPage = () => {
-    switch (activePage) {
-      case 'mentors': return <MentorsPage />;
-      case 'judges': return <JudgesPage />;
-      case 'messages': return <MessagesPage />;
-      case 'notifications': return <NotificationsPage />;
-      case 'resources': return <ResourcesPage />;
-      case 'settings': return <SettingsPage />;
-      default: return <MentorsPage />;
-    }
-  };
+  const baseTranslate = -(effectiveIndex * 100);
+  const dragPct = trackRef.current ? (dragOffset / trackRef.current.offsetWidth) * 100 : 0;
+  const translateX = Math.max(-(pageIds.length - 1) * 100, Math.min(0, baseTranslate + dragPct));
 
   return (
     <div className="min-h-screen flex">
@@ -65,12 +113,48 @@ const AppShell = () => {
             );
           })}
         </div>
+        {/* Swipe hint on desktop */}
+        <div className="px-4 py-3 border-t border-mc-100">
+          <div className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
+            <ChevronLeft className="w-3 h-3" />
+            <span>Swipe pages</span>
+            <ChevronRight className="w-3 h-3" />
+          </div>
+        </div>
       </nav>
 
-      {/* Main content */}
-      <main className="flex-1 md:pl-56 pb-20 md:pb-0">
-        <div style={{ animation: 'mcFadeIn 0.28s ease both' }} key={activePage}>
-          {renderPage()}
+      {/* Main content - swipeable */}
+      <main className="flex-1 md:pl-56 pb-20 md:pb-0 overflow-hidden" style={{ touchAction: 'pan-y' }}>
+        {/* Swipe dots */}
+        <div className="swipe-dots py-2 md:hidden">
+          {NAV_ITEMS.map((item, i) => (
+            <button key={item.id} onClick={() => setActivePage(item.id)} className="flex items-center gap-1 group">
+              <div className={`swipe-dot ${effectiveIndex === i ? 'active' : ''}`} />
+            </button>
+          ))}
+        </div>
+
+        <div
+          ref={trackRef}
+          className={`flex ${isDragging ? '' : 'transition-transform duration-350'}`}
+          style={{
+            transform: `translateX(${translateX}%)`,
+            transitionTimingFunction: 'var(--ease-smooth)',
+            transitionDuration: isDragging ? '0ms' : '350ms',
+          }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+        >
+          {pageIds.map((id) => {
+            const PageComponent = PAGE_COMPONENTS[id];
+            return (
+              <div key={id} className="min-w-full flex-shrink-0">
+                <PageComponent />
+              </div>
+            );
+          })}
         </div>
       </main>
 
