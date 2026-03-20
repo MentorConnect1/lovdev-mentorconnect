@@ -91,6 +91,7 @@ interface AppState {
   markAllNotifsRead: () => void;
   deleteNotification: (id: string) => void;
   addNotification: (notif: Notification) => void;
+  addResource: (resource: Resource) => void;
   logout: () => void;
 }
 
