@@ -1,16 +1,23 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import React from 'react';
+import { useAppStore } from '@/store/appStore';
+import LandingPage from '@/components/LandingPage';
+import LoginPage from '@/components/LoginPage';
+import SignupFlow from '@/components/SignupFlow';
+import AppShell from '@/components/AppShell';
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
-  return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
-    </div>
-  );
+const Index = () => {
+  const activePage = useAppStore(s => s.activePage);
+  const currentUser = useAppStore(s => s.currentUser);
+
+  if (!currentUser) {
+    switch (activePage) {
+      case 'login': return <LoginPage />;
+      case 'signup': return <SignupFlow />;
+      default: return <LandingPage />;
+    }
+  }
+
+  return <AppShell />;
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
