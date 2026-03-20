@@ -9,7 +9,7 @@ const MentorsPage = () => {
   const [locationFilter, setLocationFilter] = useState('');
 
   const mentors = users.filter(u => u.role === 'mentor' && u.email_verified && u.email !== currentUser?.email);
-  const locations = [...new Set(mentors.map(m => m.location).filter(Boolean))];
+  const locations = [...new Set(mentors.map(m => m.location).filter(Boolean))] as string[];
 
   const filtered = mentors.filter(m => {
     const matchQ = `${m.first_name} ${m.last_name} ${m.description || ''}`.toLowerCase().includes(search.toLowerCase());
