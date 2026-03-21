@@ -253,6 +253,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ resources });
   },
 
+  addReview: (review) => {
+    const reviews = [...get().reviews, review];
+    localStorage.setItem('mc_reviews', JSON.stringify(reviews));
+    set({ reviews });
+  },
+
+  approveReviewForFrontPage: (reviewId) => {
+    const reviews = get().reviews.map(r => r.id === reviewId ? { ...r, front_page: true } : r);
+    localStorage.setItem('mc_reviews', JSON.stringify(reviews));
+    set({ reviews });
+  },
+
   logout: () => {
     localStorage.removeItem('mc_current_user');
     set({ currentUser: null, activePage: 'landing', activeConvoId: null, conversations: [], notifications: [], messages: {} });
