@@ -23,6 +23,12 @@ const PhoneViewWrapper: React.FC<PhoneViewWrapperProps> = ({ children }) => {
 
   if (!phoneView) return <>{children}</>;
 
+  // Scale factor: the inner iframe-like area needs to render at a mobile width
+  // We render at full resolution then scale down to fit
+  const innerW = 375;
+  const innerH = PHONE_H - 40; // minus notch area
+  const scale = (PHONE_W - 12) / innerW;
+
   return (
     <div className="min-h-screen flex items-center justify-center p-8" style={{ background: 'hsl(220 14% 14%)' }}>
       <div className="relative">
@@ -40,17 +46,28 @@ const PhoneViewWrapper: React.FC<PhoneViewWrapperProps> = ({ children }) => {
           {/* Notch / Dynamic Island */}
           <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-6 rounded-full z-[100]" style={{ background: 'hsl(220 10% 10%)' }} />
 
-          {/* Scaled content viewport */}
+          {/* Content area with scale transform */}
           <div
-            className="origin-top-left overflow-auto"
+            className="overflow-y-auto overflow-x-hidden"
             style={{
               width: PHONE_W - 12,
               height: PHONE_H - 12,
               paddingTop: 32,
             }}
           >
-            <div style={{ width: PHONE_W - 12, minHeight: PHONE_H - 44 }}>
-              {children}
+            <div
+              className="origin-top-left"
+              style={{
+                width: innerW,
+                minHeight: innerH / scale,
+                transform: `scale(${scale})`,
+                transformOrigin: 'top left',
+              }}
+            >
+              {/* Force mobile breakpoint by constraining width */}
+              <div style={{ maxWidth: innerW }}>
+                {children}
+              </div>
             </div>
           </div>
         </div>

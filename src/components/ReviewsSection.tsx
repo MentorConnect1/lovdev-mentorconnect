@@ -5,7 +5,13 @@ import { Star, ThumbsUp, Quote } from 'lucide-react';
 const ReviewsSection = () => {
   const reviews = useAppStore(s => s.reviews);
 
-  const avgSatisfaction = Math.round(reviews.reduce((sum, r) => sum + r.satisfaction_pct, 0) / reviews.length);
+  // Only show front_page approved reviews on landing, fallback to first 3 if none approved
+  const frontPageReviews = reviews.filter(r => r.front_page);
+  const displayReviews = frontPageReviews.length > 0 ? frontPageReviews.slice(0, 3) : reviews.slice(0, 3);
+
+  const avgSatisfaction = reviews.length > 0
+    ? Math.round(reviews.reduce((sum, r) => sum + r.satisfaction_pct, 0) / reviews.length)
+    : 0;
 
   return (
     <div className="space-y-4">
@@ -27,7 +33,7 @@ const ReviewsSection = () => {
 
       {/* Individual reviews */}
       <div className="space-y-3">
-        {reviews.slice(0, 3).map((review, i) => (
+        {displayReviews.map((review, i) => (
           <div key={review.id} className="mc-review-card" style={{ animationDelay: `${(i + 3) * 80}ms` }}>
             <div className="flex items-start gap-3">
               <div className="mc-avatar w-9 h-9 text-xs">{review.user_name.split(' ').map(n => n[0]).join('')}</div>
@@ -39,16 +45,16 @@ const ReviewsSection = () => {
                   </div>
                   <div className="flex items-center gap-0.5">
                     {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-mc-200'}`} />
+                      <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-muted'}`} />
                     ))}
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                  <Quote className="w-3 h-3 inline text-mc-300 mr-1 -mt-0.5" />
+                  <Quote className="w-3 h-3 inline text-muted mr-1 -mt-0.5" />
                   {review.text}
                 </p>
                 <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs text-mc-400">{new Date(review.date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                  <span className="text-xs text-muted-foreground">{new Date(review.date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
                   <span className="text-xs font-semibold" style={{ color: `hsl(${review.satisfaction_pct > 90 ? '142 71% 45%' : '221 83% 53%'})` }}>
                     {review.satisfaction_pct}% satisfied
                   </span>
