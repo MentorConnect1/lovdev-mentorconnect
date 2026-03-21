@@ -59,11 +59,13 @@ export interface Resource {
 export interface Review {
   id: string;
   user_name: string;
+  user_email?: string;
   user_role: string;
   rating: number;
   text: string;
   date: string;
   satisfaction_pct: number;
+  front_page: boolean;
 }
 
 interface AppState {
@@ -92,6 +94,8 @@ interface AppState {
   deleteNotification: (id: string) => void;
   addNotification: (notif: Notification) => void;
   addResource: (resource: Resource) => void;
+  addReview: (review: Review) => void;
+  approveReviewForFrontPage: (reviewId: string) => void;
   logout: () => void;
 }
 
@@ -114,12 +118,12 @@ const DEMO_RESOURCES: Resource[] = [
 ];
 
 const DEMO_REVIEWS: Review[] = [
-  { id: 'rv1', user_name: 'Mia Tran', user_role: 'student', rating: 5, text: 'Found an amazing LD mentor in under a day. My speaker points went up 2 points at the next tournament!', date: '2025-02-14', satisfaction_pct: 98 },
-  { id: 'rv2', user_name: 'Jordan Bell', user_role: 'coach', rating: 5, text: 'Recruited 3 qualified judges for our invitational through Mentor Connect. Saved us weeks of searching.', date: '2025-01-28', satisfaction_pct: 95 },
-  { id: 'rv3', user_name: 'Aisha Patel', user_role: 'student', rating: 4, text: 'The resources section is a goldmine. Finally understood the value/criterion framework after reading the guides here.', date: '2025-03-02', satisfaction_pct: 91 },
-  { id: 'rv4', user_name: 'Carlos Mendez', user_role: 'judge', rating: 5, text: 'Great platform to connect with schools that need judges. The Tabroom integration makes verification seamless.', date: '2025-02-20', satisfaction_pct: 97 },
-  { id: 'rv5', user_name: 'Lily Zhang', user_role: 'student', rating: 5, text: 'My mentor Sarah helped me prep for TOC quals. Went from losing rounds to breaking at my first bid tournament.', date: '2025-03-08', satisfaction_pct: 99 },
-  { id: 'rv6', user_name: 'Derek Foster', user_role: 'teacher', rating: 4, text: 'Started a debate program at my school using mentors from this platform. Kids love it.', date: '2025-01-15', satisfaction_pct: 88 },
+  { id: 'rv1', user_name: 'Mia Tran', user_role: 'student', rating: 5, text: 'Found an amazing LD mentor in under a day. My speaker points went up 2 points at the next tournament!', date: '2025-02-14', satisfaction_pct: 98, front_page: true },
+  { id: 'rv2', user_name: 'Jordan Bell', user_role: 'coach', rating: 5, text: 'Recruited 3 qualified judges for our invitational through Mentor Connect. Saved us weeks of searching.', date: '2025-01-28', satisfaction_pct: 95, front_page: true },
+  { id: 'rv3', user_name: 'Aisha Patel', user_role: 'student', rating: 4, text: 'The resources section is a goldmine. Finally understood the value/criterion framework after reading the guides here.', date: '2025-03-02', satisfaction_pct: 91, front_page: true },
+  { id: 'rv4', user_name: 'Carlos Mendez', user_role: 'judge', rating: 5, text: 'Great platform to connect with schools that need judges. The Tabroom integration makes verification seamless.', date: '2025-02-20', satisfaction_pct: 97, front_page: false },
+  { id: 'rv5', user_name: 'Lily Zhang', user_role: 'student', rating: 5, text: 'My mentor Sarah helped me prep for TOC quals. Went from losing rounds to breaking at my first bid tournament.', date: '2025-03-08', satisfaction_pct: 99, front_page: false },
+  { id: 'rv6', user_name: 'Derek Foster', user_role: 'teacher', rating: 4, text: 'Started a debate program at my school using mentors from this platform. Kids love it.', date: '2025-01-15', satisfaction_pct: 88, front_page: false },
 ];
 
 const loadFromStorage = <T,>(key: string, fallback: T): T => {
@@ -136,7 +140,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   messages: loadFromStorage('mc_messages', {}),
   notifications: loadFromStorage('mc_notifications', []),
   resources: loadFromStorage('mc_resources', DEMO_RESOURCES),
-  reviews: DEMO_REVIEWS,
+  reviews: loadFromStorage('mc_reviews', DEMO_REVIEWS),
   activePage: loadFromStorage('mc_current_user', null) ? 'mentors' : 'landing',
   activeConvoId: null,
 
@@ -247,6 +251,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     const resources = [...get().resources, resource];
     localStorage.setItem('mc_resources', JSON.stringify(resources));
     set({ resources });
+  },
+
+  addReview: (review) => {
+    const reviews = [...get().reviews, review];
+    localStorage.setItem('mc_reviews', JSON.stringify(reviews));
+    set({ reviews });
+  },
+
+  approveReviewForFrontPage: (reviewId) => {
+    const reviews = get().reviews.map(r => r.id === reviewId ? { ...r, front_page: true } : r);
+    localStorage.setItem('mc_reviews', JSON.stringify(reviews));
+    set({ reviews });
   },
 
   logout: () => {
