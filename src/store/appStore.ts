@@ -59,11 +59,13 @@ export interface Resource {
 export interface Review {
   id: string;
   user_name: string;
+  user_email?: string;
   user_role: string;
   rating: number;
   text: string;
   date: string;
   satisfaction_pct: number;
+  front_page: boolean;
 }
 
 interface AppState {
