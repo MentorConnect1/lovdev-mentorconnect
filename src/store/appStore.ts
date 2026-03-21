@@ -94,6 +94,8 @@ interface AppState {
   deleteNotification: (id: string) => void;
   addNotification: (notif: Notification) => void;
   addResource: (resource: Resource) => void;
+  addReview: (review: Review) => void;
+  approveReviewForFrontPage: (reviewId: string) => void;
   logout: () => void;
 }
 
