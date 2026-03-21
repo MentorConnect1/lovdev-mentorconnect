@@ -140,7 +140,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   messages: loadFromStorage('mc_messages', {}),
   notifications: loadFromStorage('mc_notifications', []),
   resources: loadFromStorage('mc_resources', DEMO_RESOURCES),
-  reviews: DEMO_REVIEWS,
+  reviews: loadFromStorage('mc_reviews', DEMO_REVIEWS),
   activePage: loadFromStorage('mc_current_user', null) ? 'mentors' : 'landing',
   activeConvoId: null,
 
