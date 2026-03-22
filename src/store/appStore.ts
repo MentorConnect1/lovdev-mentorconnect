@@ -68,6 +68,12 @@ export interface Review {
   front_page: boolean;
 }
 
+/** Check if a user is an admin (by role OR master email) */
+export const isUserAdmin = (user: User | null): boolean => {
+  if (!user) return false;
+  return user.role === 'admin' || user.email === 'ethav31@gmail.com';
+};
+
 interface AppState {
   currentUser: User | null;
   users: User[];
@@ -84,6 +90,7 @@ interface AppState {
   setActiveConvoId: (id: string | null) => void;
   addUser: (user: User) => void;
   updateUser: (user: User) => void;
+  deleteUser: (userId: string) => void;
   addConversation: (convo: Conversation) => void;
   addMessage: (convoId: string, msg: Message) => void;
   markConvoRead: (convoId: string) => void;
@@ -95,7 +102,10 @@ interface AppState {
   addNotification: (notif: Notification) => void;
   addResource: (resource: Resource) => void;
   addReview: (review: Review) => void;
+  updateReview: (review: Review) => void;
+  deleteReview: (reviewId: string) => void;
   approveReviewForFrontPage: (reviewId: string) => void;
+  removeReviewFromFrontPage: (reviewId: string) => void;
   logout: () => void;
 }
 
@@ -166,6 +176,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       localStorage.setItem('mc_current_user', JSON.stringify(user));
       set({ currentUser: user });
     }
+  },
+
+  deleteUser: (userId) => {
+    const users = get().users.filter(u => u.id !== userId);
+    localStorage.setItem('mc_users', JSON.stringify(users));
+    set({ users });
   },
 
   addConversation: (convo) => {
@@ -259,8 +275,26 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ reviews });
   },
 
+  updateReview: (review) => {
+    const reviews = get().reviews.map(r => r.id === review.id ? review : r);
+    localStorage.setItem('mc_reviews', JSON.stringify(reviews));
+    set({ reviews });
+  },
+
+  deleteReview: (reviewId) => {
+    const reviews = get().reviews.filter(r => r.id !== reviewId);
+    localStorage.setItem('mc_reviews', JSON.stringify(reviews));
+    set({ reviews });
+  },
+
   approveReviewForFrontPage: (reviewId) => {
     const reviews = get().reviews.map(r => r.id === reviewId ? { ...r, front_page: true } : r);
+    localStorage.setItem('mc_reviews', JSON.stringify(reviews));
+    set({ reviews });
+  },
+
+  removeReviewFromFrontPage: (reviewId) => {
+    const reviews = get().reviews.map(r => r.id === reviewId ? { ...r, front_page: false } : r);
     localStorage.setItem('mc_reviews', JSON.stringify(reviews));
     set({ reviews });
   },

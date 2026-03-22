@@ -89,3 +89,5 @@ export const SCHOOLS = [
   'Canyon Middle School','Heritage Middle School','Pioneer Middle School',
   'Discovery Middle School','Innovation Middle School','Creekside Middle School',
 ];
+
+export const LOCATIONS = [...US_STATES, ...COUNTRIES];

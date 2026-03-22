@@ -34,6 +34,7 @@ const AppShell = () => {
   const { activePage, setActivePage, currentUser, conversations, notifications } = useAppStore();
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [swipeLocked, setSwipeLocked] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
   const startXRef = useRef(0);
   const startYRef = useRef(0);
@@ -52,20 +53,22 @@ const AppShell = () => {
   const currentIndex = pageIds.indexOf(activePage);
   const effectiveIndex = currentIndex >= 0 ? currentIndex : 0;
 
-  // Disable swiping on settings page
-  const isSettings = activePage === 'settings';
-
   const onPointerDown = useCallback((e: React.PointerEvent) => {
-    if (isSettings) return;
+    if (swipeLocked) return;
+    // Don't start swipe on range inputs or interactive elements
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'range') return;
+    if (target.closest('input[type="range"]')) return;
+
     startXRef.current = e.clientX;
     startYRef.current = e.clientY;
     setIsDragging(true);
     didSwipeRef.current = false;
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-  }, [isSettings]);
+  }, [swipeLocked]);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isDragging || isSettings) return;
+    if (!isDragging || swipeLocked) return;
     const dx = e.clientX - startXRef.current;
     const dy = e.clientY - startYRef.current;
     if (!didSwipeRef.current && Math.abs(dy) > Math.abs(dx)) {
@@ -74,7 +77,7 @@ const AppShell = () => {
     }
     didSwipeRef.current = true;
     setDragOffset(dx);
-  }, [isDragging, isSettings]);
+  }, [isDragging, swipeLocked]);
 
   const onPointerUp = useCallback(() => {
     if (!isDragging) return;
@@ -95,10 +98,10 @@ const AppShell = () => {
 
   const baseTranslate = -(effectiveIndex * 100);
   const dragPct = trackRef.current ? (dragOffset / trackRef.current.offsetWidth) * 100 : 0;
-  const translateX = Math.max(-(pageIds.length - 1) * 100, Math.min(0, baseTranslate + (isSettings ? 0 : dragPct)));
+  const translateX = Math.max(-(pageIds.length - 1) * 100, Math.min(0, baseTranslate + dragPct));
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex flex-col md:flex-row">
       {/* Sidebar - desktop */}
       <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-56 flex-col border-r border-border z-50" style={{ background: 'hsl(0 0% 100% / 0.94)', backdropFilter: 'blur(18px)' }}>
         <div className="flex items-center gap-2.5 px-4 py-5 border-b border-border">
@@ -121,7 +124,7 @@ const AppShell = () => {
       </nav>
 
       {/* Main content - swipeable */}
-      <main className="flex-1 md:pl-56 pb-20 md:pb-0 overflow-hidden" style={{ touchAction: 'pan-y' }}>
+      <main className="flex-1 md:pl-56 pb-16 md:pb-0 overflow-hidden" style={{ touchAction: 'pan-y' }}>
         {/* Swipe dots */}
         <div className="swipe-dots py-2 md:hidden">
           {NAV_ITEMS.map((item, i) => (
@@ -156,15 +159,15 @@ const AppShell = () => {
       </main>
 
       {/* Bottom nav - mobile */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border z-50 flex justify-around py-1.5 px-1" style={{ background: 'hsl(0 0% 100% / 0.94)', backdropFilter: 'blur(18px)' }}>
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border z-50 flex justify-around items-center py-1 px-0.5" style={{ background: 'hsl(0 0% 100% / 0.94)', backdropFilter: 'blur(18px)' }}>
         {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
           const badge = getBadge(id);
           return (
             <button key={id} onClick={() => setActivePage(id)}
-              className={`flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-xl text-[10px] font-medium transition-colors relative ${activePage === id ? 'text-primary' : 'text-muted-foreground'}`}>
+              className={`flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-xl text-[9px] font-medium transition-colors relative flex-1 ${activePage === id ? 'text-primary' : 'text-muted-foreground'}`}>
               <Icon className="w-[18px] h-[18px]" strokeWidth={activePage === id ? 2.5 : 2} />
-              <span>{label}</span>
-              {badge > 0 && <span className="absolute -top-0.5 right-0 bg-destructive text-destructive-foreground text-[9px] font-bold min-w-[16px] h-4 rounded-full flex items-center justify-center px-1">{badge > 9 ? '9+' : badge}</span>}
+              <span className="truncate max-w-full">{label}</span>
+              {badge > 0 && <span className="absolute -top-0.5 right-1 bg-destructive text-destructive-foreground text-[8px] font-bold min-w-[14px] h-3.5 rounded-full flex items-center justify-center px-0.5">{badge > 9 ? '9+' : badge}</span>}
             </button>
           );
         })}
