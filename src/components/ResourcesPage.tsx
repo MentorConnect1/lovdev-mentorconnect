@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { useAppStore, Resource } from '@/store/appStore';
+import { useAppStore, Resource, isUserAdmin } from '@/store/appStore';
 import { BookOpen, Video, FileText, Link2, ExternalLink, X, Plus, ArrowLeft } from 'lucide-react';
 
 const CAT_COLORS: Record<string, string> = {
-  debate: 'bg-mc-100 text-mc-800',
+  debate: 'bg-secondary text-secondary-foreground',
   public_speaking: 'bg-purple-100 text-purple-800',
   coaching: 'bg-emerald-100 text-emerald-800',
   judging: 'bg-orange-100 text-orange-800',
-  general: 'bg-gray-100 text-gray-700',
+  general: 'bg-muted text-muted-foreground',
 };
 
 const TYPE_ICONS: Record<string, React.ElementType> = {
@@ -24,7 +24,7 @@ const ResourcesPage = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newResource, setNewResource] = useState({ title: '', description: '', url: '', category: 'debate', type: 'document' });
 
-  const isAdmin = currentUser?.email === 'ethav31@gmail.com';
+  const isAdmin = isUserAdmin(currentUser);
   const filtered = catFilter ? resources.filter(r => r.category === catFilter) : resources;
 
   const handleCreate = () => {
@@ -44,7 +44,6 @@ const ResourcesPage = () => {
     setShowCreateForm(false);
   };
 
-  // Resource detail view
   if (selectedResource) {
     const Icon = TYPE_ICONS[selectedResource.type] || TYPE_ICONS.default;
     const catClass = CAT_COLORS[selectedResource.category] || CAT_COLORS.general;
@@ -61,16 +60,16 @@ const ResourcesPage = () => {
           </div>
         </div>
         <div className="px-5 py-6 md:px-6">
-          <div className="max-w-[700px]">
+          <div className="max-w-[700px] mx-auto">
             <div className="mc-card-subtle rounded-2xl p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-14 h-14 rounded-xl bg-mc-100 flex items-center justify-center">
+                <div className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center">
                   <Icon className="w-7 h-7 text-primary stroke-[1.75]" />
                 </div>
                 <div>
                   <div className="flex gap-2">
                     <span className={`mc-badge ${catClass}`}>{(selectedResource.category || '').replace('_', ' ')}</span>
-                    <span className="mc-badge border border-mc-200 text-primary bg-transparent">{selectedResource.type}</span>
+                    <span className="mc-badge border border-border text-primary bg-transparent">{selectedResource.type}</span>
                   </div>
                   <div className="flex gap-3 mt-1.5 text-xs text-muted-foreground">
                     {selectedResource.posted_by_name && <span>By {selectedResource.posted_by_name}</span>}
@@ -105,8 +104,10 @@ const ResourcesPage = () => {
               <h1 className="font-display text-2xl text-foreground">Resources</h1>
             </div>
             {isAdmin && (
-              <button onClick={() => setShowCreateForm(true)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:-translate-y-0.5 active:scale-[0.98] transition-all">
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowCreateForm(true); }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:-translate-y-0.5 active:scale-[0.98] transition-all relative z-10"
+                style={{ boxShadow: '0 4px 18px hsl(221 83% 53% / 0.35)' }}>
                 <Plus className="w-4 h-4" /> New
               </button>
             )}
@@ -124,13 +125,12 @@ const ResourcesPage = () => {
         </div>
       </div>
 
-      {/* Create form modal */}
       {showCreateForm && (
         <div className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-4" onClick={() => setShowCreateForm(false)}>
           <div className="mc-card p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-display text-xl text-foreground">New Resource</h2>
-              <button onClick={() => setShowCreateForm(false)} className="p-1.5 rounded-lg hover:bg-mc-50"><X className="w-4 h-4" /></button>
+              <button onClick={() => setShowCreateForm(false)} className="p-1.5 rounded-lg hover:bg-muted"><X className="w-4 h-4" /></button>
             </div>
             <div className="space-y-3">
               <div>
@@ -176,10 +176,10 @@ const ResourcesPage = () => {
       )}
 
       <div className="px-5 py-5 md:px-6">
-        <div className="max-w-[1100px]">
+        <div className="max-w-[1100px] mx-auto">
           {filtered.length === 0 ? (
             <div className="text-center py-12">
-              <BookOpen className="w-12 h-12 text-mc-300 mx-auto mb-3 stroke-[1.5]" />
+              <BookOpen className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3 stroke-[1.5]" />
               <p className="font-medium text-muted-foreground">No resources in this category</p>
             </div>
           ) : (
@@ -191,21 +191,19 @@ const ResourcesPage = () => {
                 return (
                   <div key={r.id} className="mc-card-subtle rounded-2xl p-4 cursor-pointer" onClick={() => setSelectedResource(r)}>
                     <div className="flex gap-3.5">
-                      <div className="w-12 h-12 rounded-xl bg-mc-100 flex items-center justify-center shrink-0">
+                      <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center shrink-0">
                         <Icon className="w-6 h-6 text-primary stroke-[1.75]" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <h3 className="font-semibold text-sm text-foreground">{r.title}</h3>
                           {r.url && r.url !== '#' && (
-                            <span className="text-primary shrink-0">
-                              <ExternalLink className="w-4 h-4" />
-                            </span>
+                            <span className="text-primary shrink-0"><ExternalLink className="w-4 h-4" /></span>
                           )}
                         </div>
                         <div className="flex gap-2 mt-2">
                           <span className={`mc-badge ${catClass}`}>{(r.category || '').replace('_', ' ')}</span>
-                          <span className="mc-badge border border-mc-200 text-primary bg-transparent">{r.type}</span>
+                          <span className="mc-badge border border-border text-primary bg-transparent">{r.type}</span>
                         </div>
                         {r.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2 leading-relaxed">{r.description}</p>}
                         <div className="flex gap-2 mt-2 text-xs text-muted-foreground">

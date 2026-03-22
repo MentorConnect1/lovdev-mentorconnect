@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { useAppStore } from '@/store/appStore';
+import { useAppStore, isUserAdmin } from '@/store/appStore';
 import { Settings, User, Shield, LogOut, Trash2, Save, Mail } from 'lucide-react';
 import AdminPanel from './AdminPanel';
 
 const SettingsPage = () => {
   const { currentUser, updateUser, logout, setActivePage } = useAppStore();
 
-  const isAdmin = currentUser?.email === 'ethav31@gmail.com';
+  const isAdmin = isUserAdmin(currentUser);
 
   const [form, setForm] = useState({
     first_name: currentUser?.first_name || '',
@@ -41,7 +41,7 @@ const SettingsPage = () => {
         </div>
       </div>
 
-      <div className="px-5 py-5 md:px-6 space-y-5 max-w-[700px]">
+      <div className="px-5 py-5 md:px-6 space-y-5 max-w-[700px] mx-auto">
         {saved && (
           <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl px-4 py-3 text-sm" style={{ animation: 'mcSlideIn 0.25s ease both' }}>
             <Save className="w-4 h-4" /> Profile updated successfully!
@@ -60,7 +60,7 @@ const SettingsPage = () => {
               <div>
                 <p className="font-semibold text-foreground">{currentUser?.first_name} {currentUser?.last_name}</p>
                 <p className="text-xs text-muted-foreground flex items-center gap-1"><Mail className="w-3 h-3" />{currentUser?.email}</p>
-                <span className="mc-badge-role mt-1 text-[10px]">{currentUser?.role}</span>
+                <span className="mc-badge-role mt-1 text-[10px]">{isAdmin ? 'admin' : currentUser?.role}</span>
               </div>
             </div>
             <div className="space-y-3">
@@ -74,7 +74,7 @@ const SettingsPage = () => {
               )}
               <div><label className="block text-sm font-medium mb-1">About You</label><textarea className="mc-form-input resize-y min-h-[96px]" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
               {currentUser?.role !== 'coach' && (
-                <div className="flex items-center justify-between bg-mc-50 rounded-xl p-4">
+                <div className="flex items-center justify-between bg-muted rounded-xl p-4">
                   <div>
                     <p className="font-medium text-sm text-foreground">Available for hire</p>
                     <p className="text-xs text-muted-foreground">Let others know you're available</p>
@@ -101,7 +101,7 @@ const SettingsPage = () => {
             <h2 className="font-semibold text-sm text-foreground">Account</h2>
           </div>
           <div className="px-5 pb-5 space-y-3">
-            <div className="flex items-center justify-between bg-mc-50 rounded-xl p-4">
+            <div className="flex items-center justify-between bg-muted rounded-xl p-4">
               <div>
                 <p className="font-medium text-sm text-foreground">Email Verified</p>
                 <p className="text-xs text-muted-foreground">{currentUser?.email}</p>
