@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { Users, Scale, MessageCircle, Bell, BookOpen, Settings, Sparkles, Star } from 'lucide-react';
+import { useIsPhoneView } from './PhoneViewWrapper';
 import MentorsPage from './MentorsPage';
 import JudgesPage from './JudgesPage';
 import MessagesPage from './MessagesPage';
@@ -39,6 +40,10 @@ const AppShell = () => {
   const startXRef = useRef(0);
   const startYRef = useRef(0);
   const didSwipeRef = useRef(false);
+  const isPhoneView = useIsPhoneView();
+
+  // Use phone view OR real mobile breakpoint
+  const isMobile = isPhoneView;
 
   const unreadMsgs = conversations.filter(c => c.unread_by?.includes(currentUser?.email || '')).length;
   const unreadNotifs = notifications.filter(n => n.user_email === currentUser?.email && !n.read).length;
@@ -99,40 +104,57 @@ const AppShell = () => {
   const dragPct = trackRef.current ? (dragOffset / trackRef.current.offsetWidth) * 100 : 0;
   const translateX = Math.max(-(pageIds.length - 1) * 100, Math.min(0, baseTranslate + dragPct));
 
+  const showSidebar = !isMobile;
+  const showBottomNav = isMobile;
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Sidebar - desktop only */}
-      <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-56 flex-col border-r border-border z-50" style={{ background: 'hsl(0 0% 100% / 0.94)', backdropFilter: 'blur(18px)' }}>
-        <div className="flex items-center gap-2.5 px-4 py-5 border-b border-border">
-          <div className="mc-logo-icon"><Sparkles className="w-4 h-4 text-primary-foreground" /></div>
-          <span className="font-display text-base text-foreground">Mentor Connect</span>
-        </div>
-        <div className="flex flex-col gap-1 p-3 flex-1">
-          {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
-            const badge = getBadge(id);
-            const displayLabel = id === 'notifications' ? 'Notifications' : label;
-            return (
-              <button key={id} onClick={() => setActivePage(id)}
-                className={`mc-nav-item ${activePage === id ? 'active' : ''}`}>
-                <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={activePage === id ? 2.5 : 2} />
-                <span>{displayLabel}</span>
-                {badge > 0 && <span className="ml-auto bg-destructive text-destructive-foreground text-[11px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">{badge > 9 ? '9+' : badge}</span>}
-              </button>
-            );
-          })}
-        </div>
-      </nav>
+      {/* Sidebar - desktop only, hidden in phone view */}
+      {showSidebar && (
+        <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-56 flex-col border-r border-border z-50" style={{ background: 'hsl(0 0% 100% / 0.94)', backdropFilter: 'blur(18px)' }}>
+          <div className="flex items-center gap-2.5 px-4 py-5 border-b border-border">
+            <div className="mc-logo-icon"><Sparkles className="w-4 h-4 text-primary-foreground" /></div>
+            <span className="font-display text-base text-foreground">Mentor Connect</span>
+          </div>
+          <div className="flex flex-col gap-1 p-3 flex-1">
+            {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
+              const badge = getBadge(id);
+              const displayLabel = id === 'notifications' ? 'Notifications' : label;
+              return (
+                <button key={id} onClick={() => setActivePage(id)}
+                  className={`mc-nav-item ${activePage === id ? 'active' : ''}`}>
+                  <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={activePage === id ? 2.5 : 2} />
+                  <span>{displayLabel}</span>
+                  {badge > 0 && <span className="ml-auto bg-destructive text-destructive-foreground text-[11px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">{badge > 9 ? '9+' : badge}</span>}
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      )}
 
-      {/* Main content - swipeable */}
-      <main className="flex-1 md:pl-56 pb-14 md:pb-0 overflow-hidden" style={{ touchAction: 'pan-y' }}>
-        {/* Swipe dots */}
-        <div className="swipe-dots py-2 md:hidden">
-          {NAV_ITEMS.map((item, i) => (
-            <button key={item.id} onClick={() => setActivePage(item.id)} className="flex items-center gap-1 group">
-              <div className={`swipe-dot ${effectiveIndex === i ? 'active' : ''}`} />
-            </button>
-          ))}
-        </div>
+      {/* Main content */}
+      <main className={`flex-1 overflow-hidden ${showSidebar ? 'md:pl-56' : ''} ${showBottomNav ? 'pb-14' : ''}`} style={{ touchAction: 'pan-y' }}>
+        {/* Swipe dots - mobile/phone view only */}
+        {isMobile && (
+          <div className="swipe-dots py-2">
+            {NAV_ITEMS.map((item, i) => (
+              <button key={item.id} onClick={() => setActivePage(item.id)} className="flex items-center gap-1 group">
+                <div className={`swipe-dot ${effectiveIndex === i ? 'active' : ''}`} />
+              </button>
+            ))}
+          </div>
+        )}
+        {/* Also show dots on real mobile */}
+        {!isMobile && (
+          <div className="swipe-dots py-2 md:hidden">
+            {NAV_ITEMS.map((item, i) => (
+              <button key={item.id} onClick={() => setActivePage(item.id)} className="flex items-center gap-1 group">
+                <div className={`swipe-dot ${effectiveIndex === i ? 'active' : ''}`} />
+              </button>
+            ))}
+          </div>
+        )}
 
         <div
           ref={trackRef}
@@ -158,20 +180,39 @@ const AppShell = () => {
         </div>
       </main>
 
-      {/* Bottom nav - mobile only */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border z-50 flex items-stretch h-14" style={{ background: 'hsl(0 0% 100% / 0.94)', backdropFilter: 'blur(18px)' }}>
-        {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
-          const badge = getBadge(id);
-          return (
-            <button key={id} onClick={() => setActivePage(id)}
-              className={`flex flex-col items-center justify-center gap-0.5 flex-1 text-[9px] font-medium transition-colors relative ${activePage === id ? 'text-primary' : 'text-muted-foreground'}`}>
-              <Icon className="w-[18px] h-[18px]" strokeWidth={activePage === id ? 2.5 : 2} />
-              <span className="truncate max-w-full leading-tight">{label}</span>
-              {badge > 0 && <span className="absolute top-1 right-1/4 bg-destructive text-destructive-foreground text-[8px] font-bold min-w-[14px] h-3.5 rounded-full flex items-center justify-center px-0.5">{badge > 9 ? '9+' : badge}</span>}
-            </button>
-          );
-        })}
-      </nav>
+      {/* Bottom nav - shown in phone view or real mobile */}
+      {showBottomNav && (
+        <nav className="fixed bottom-0 left-0 right-0 border-t border-border z-50 flex items-stretch h-14" style={{ background: 'hsl(0 0% 100% / 0.94)', backdropFilter: 'blur(18px)' }}>
+          {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
+            const badge = getBadge(id);
+            return (
+              <button key={id} onClick={() => setActivePage(id)}
+                className={`flex flex-col items-center justify-center gap-0.5 flex-1 text-[9px] font-medium transition-colors relative ${activePage === id ? 'text-primary' : 'text-muted-foreground'}`}>
+                <Icon className="w-[18px] h-[18px]" strokeWidth={activePage === id ? 2.5 : 2} />
+                <span className="truncate max-w-full leading-tight">{label}</span>
+                {badge > 0 && <span className="absolute top-1 right-1/4 bg-destructive text-destructive-foreground text-[8px] font-bold min-w-[14px] h-3.5 rounded-full flex items-center justify-center px-0.5">{badge > 9 ? '9+' : badge}</span>}
+              </button>
+            );
+          })}
+        </nav>
+      )}
+
+      {/* Bottom nav for real mobile (non-phone-view) */}
+      {!showBottomNav && (
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border z-50 flex items-stretch h-14" style={{ background: 'hsl(0 0% 100% / 0.94)', backdropFilter: 'blur(18px)' }}>
+          {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
+            const badge = getBadge(id);
+            return (
+              <button key={id} onClick={() => setActivePage(id)}
+                className={`flex flex-col items-center justify-center gap-0.5 flex-1 text-[9px] font-medium transition-colors relative ${activePage === id ? 'text-primary' : 'text-muted-foreground'}`}>
+                <Icon className="w-[18px] h-[18px]" strokeWidth={activePage === id ? 2.5 : 2} />
+                <span className="truncate max-w-full leading-tight">{label}</span>
+                {badge > 0 && <span className="absolute top-1 right-1/4 bg-destructive text-destructive-foreground text-[8px] font-bold min-w-[14px] h-3.5 rounded-full flex items-center justify-center px-0.5">{badge > 9 ? '9+' : badge}</span>}
+              </button>
+            );
+          })}
+        </nav>
+      )}
     </div>
   );
 };

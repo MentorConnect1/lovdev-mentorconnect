@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, createContext, useContext } from 'react';
+
+export const PhoneViewContext = createContext(false);
+export const useIsPhoneView = () => useContext(PhoneViewContext);
 
 interface PhoneViewWrapperProps {
   children: React.ReactNode;
@@ -21,18 +24,15 @@ const PhoneViewWrapper: React.FC<PhoneViewWrapperProps> = ({ children }) => {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  if (!phoneView) return <>{children}</>;
+  if (!phoneView) return <PhoneViewContext.Provider value={false}>{children}</PhoneViewContext.Provider>;
 
-  // Scale factor: the inner iframe-like area needs to render at a mobile width
-  // We render at full resolution then scale down to fit
   const innerW = 375;
-  const innerH = PHONE_H - 40; // minus notch area
+  const innerH = PHONE_H - 40;
   const scale = (PHONE_W - 12) / innerW;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-8" style={{ background: 'hsl(220 14% 14%)' }}>
       <div className="relative">
-        {/* Phone frame */}
         <div
           className="rounded-[3rem] border-[6px] overflow-hidden relative"
           style={{
@@ -43,10 +43,7 @@ const PhoneViewWrapper: React.FC<PhoneViewWrapperProps> = ({ children }) => {
             boxShadow: '0 24px 80px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05)',
           }}
         >
-          {/* Notch / Dynamic Island */}
           <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-6 rounded-full z-[100]" style={{ background: 'hsl(220 10% 10%)' }} />
-
-          {/* Content area with scale transform */}
           <div
             className="overflow-y-auto overflow-x-hidden"
             style={{
@@ -64,14 +61,14 @@ const PhoneViewWrapper: React.FC<PhoneViewWrapperProps> = ({ children }) => {
                 transformOrigin: 'top left',
               }}
             >
-              {/* Force mobile breakpoint by constraining width */}
               <div style={{ maxWidth: innerW }}>
-                {children}
+                <PhoneViewContext.Provider value={true}>
+                  {children}
+                </PhoneViewContext.Provider>
               </div>
             </div>
           </div>
         </div>
-        {/* Label */}
         <div className="text-center mt-4 text-sm font-medium" style={{ color: 'hsl(220 10% 50%)' }}>
           Phone Preview — <kbd className="px-2 py-0.5 rounded text-xs" style={{ background: 'hsl(220 10% 22%)', color: 'hsl(220 10% 65%)' }}>Ctrl+Shift+E</kbd> to exit
         </div>
