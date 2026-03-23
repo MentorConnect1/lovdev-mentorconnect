@@ -14,7 +14,7 @@ const NAV_ITEMS = [
   { id: 'mentors', label: 'Mentors', icon: Users },
   { id: 'judges', label: 'Judges', icon: Scale },
   { id: 'messages', label: 'Messages', icon: MessageCircle },
-  { id: 'notifications', label: 'Notifications', icon: Bell },
+  { id: 'notifications', label: 'Notifs', icon: Bell },
   { id: 'resources', label: 'Resources', icon: BookOpen },
   { id: 'reviews', label: 'Reviews', icon: Star },
   { id: 'settings', label: 'Settings', icon: Settings },
@@ -55,7 +55,6 @@ const AppShell = () => {
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (swipeLocked) return;
-    // Don't start swipe on range inputs or interactive elements
     const target = e.target as HTMLElement;
     if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'range') return;
     if (target.closest('input[type="range"]')) return;
@@ -102,7 +101,7 @@ const AppShell = () => {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Sidebar - desktop */}
+      {/* Sidebar - desktop only */}
       <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-56 flex-col border-r border-border z-50" style={{ background: 'hsl(0 0% 100% / 0.94)', backdropFilter: 'blur(18px)' }}>
         <div className="flex items-center gap-2.5 px-4 py-5 border-b border-border">
           <div className="mc-logo-icon"><Sparkles className="w-4 h-4 text-primary-foreground" /></div>
@@ -111,11 +110,12 @@ const AppShell = () => {
         <div className="flex flex-col gap-1 p-3 flex-1">
           {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
             const badge = getBadge(id);
+            const displayLabel = id === 'notifications' ? 'Notifications' : label;
             return (
               <button key={id} onClick={() => setActivePage(id)}
                 className={`mc-nav-item ${activePage === id ? 'active' : ''}`}>
                 <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={activePage === id ? 2.5 : 2} />
-                <span>{label}</span>
+                <span>{displayLabel}</span>
                 {badge > 0 && <span className="ml-auto bg-destructive text-destructive-foreground text-[11px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">{badge > 9 ? '9+' : badge}</span>}
               </button>
             );
@@ -124,7 +124,7 @@ const AppShell = () => {
       </nav>
 
       {/* Main content - swipeable */}
-      <main className="flex-1 md:pl-56 pb-16 md:pb-0 overflow-hidden" style={{ touchAction: 'pan-y' }}>
+      <main className="flex-1 md:pl-56 pb-14 md:pb-0 overflow-hidden" style={{ touchAction: 'pan-y' }}>
         {/* Swipe dots */}
         <div className="swipe-dots py-2 md:hidden">
           {NAV_ITEMS.map((item, i) => (
@@ -158,16 +158,16 @@ const AppShell = () => {
         </div>
       </main>
 
-      {/* Bottom nav - mobile */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border z-50 flex justify-around items-center py-1 px-0.5" style={{ background: 'hsl(0 0% 100% / 0.94)', backdropFilter: 'blur(18px)' }}>
+      {/* Bottom nav - mobile only */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border z-50 flex items-stretch h-14" style={{ background: 'hsl(0 0% 100% / 0.94)', backdropFilter: 'blur(18px)' }}>
         {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
           const badge = getBadge(id);
           return (
             <button key={id} onClick={() => setActivePage(id)}
-              className={`flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-xl text-[9px] font-medium transition-colors relative flex-1 ${activePage === id ? 'text-primary' : 'text-muted-foreground'}`}>
+              className={`flex flex-col items-center justify-center gap-0.5 flex-1 text-[9px] font-medium transition-colors relative ${activePage === id ? 'text-primary' : 'text-muted-foreground'}`}>
               <Icon className="w-[18px] h-[18px]" strokeWidth={activePage === id ? 2.5 : 2} />
-              <span className="truncate max-w-full">{label}</span>
-              {badge > 0 && <span className="absolute -top-0.5 right-1 bg-destructive text-destructive-foreground text-[8px] font-bold min-w-[14px] h-3.5 rounded-full flex items-center justify-center px-0.5">{badge > 9 ? '9+' : badge}</span>}
+              <span className="truncate max-w-full leading-tight">{label}</span>
+              {badge > 0 && <span className="absolute top-1 right-1/4 bg-destructive text-destructive-foreground text-[8px] font-bold min-w-[14px] h-3.5 rounded-full flex items-center justify-center px-0.5">{badge > 9 ? '9+' : badge}</span>}
             </button>
           );
         })}
