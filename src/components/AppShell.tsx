@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { useAppStore } from '@/store/appStore';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Users, Scale, MessageCircle, Bell, BookOpen, Settings, Sparkles, Star } from 'lucide-react';
-import { useIsPhoneView } from './PhoneViewWrapper';
 import MentorsPage from './MentorsPage';
 import JudgesPage from './JudgesPage';
 import MessagesPage from './MessagesPage';
@@ -10,6 +10,7 @@ import NotificationsPage from './NotificationsPage';
 import ResourcesPage from './ResourcesPage';
 import ReviewsPage from './ReviewsPage';
 import SettingsPage from './SettingsPage';
+import { useIsPhoneView } from './PhoneViewWrapper';
 
 const NAV_ITEMS = [
   { id: 'mentors', label: 'Mentors', icon: Users },
@@ -35,15 +36,14 @@ const AppShell = () => {
   const { activePage, setActivePage, currentUser, conversations, notifications } = useAppStore();
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [swipeLocked, setSwipeLocked] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
   const startXRef = useRef(0);
   const startYRef = useRef(0);
+  const dragOffsetRef = useRef(0);
   const didSwipeRef = useRef(false);
   const isPhoneView = useIsPhoneView();
-
-  // Use phone view OR real mobile breakpoint
-  const isMobile = isPhoneView;
+  const isViewportMobile = useIsMobile();
+  const isMobileLayout = isPhoneView || isViewportMobile;
 
   const unreadMsgs = conversations.filter(c => c.unread_by?.includes(currentUser?.email || '')).length;
   const unreadNotifs = notifications.filter(n => n.user_email === currentUser?.email && !n.read).length;
@@ -54,64 +54,76 @@ const AppShell = () => {
     return 0;
   };
 
-  const pageIds = NAV_ITEMS.map(n => n.id);
+  const pageIds = NAV_ITEMS.map((n) => n.id);
   const currentIndex = pageIds.indexOf(activePage);
   const effectiveIndex = currentIndex >= 0 ? currentIndex : 0;
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
-    if (swipeLocked) return;
     const target = e.target as HTMLElement;
     if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'range') return;
     if (target.closest('input[type="range"]')) return;
 
     startXRef.current = e.clientX;
     startYRef.current = e.clientY;
+    dragOffsetRef.current = 0;
+    setDragOffset(0);
     setIsDragging(true);
     didSwipeRef.current = false;
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-  }, [swipeLocked]);
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  }, []);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isDragging || swipeLocked) return;
+    if (!isDragging) return;
+
     const dx = e.clientX - startXRef.current;
     const dy = e.clientY - startYRef.current;
+
     if (!didSwipeRef.current && Math.abs(dy) > Math.abs(dx)) {
       setIsDragging(false);
+      dragOffsetRef.current = 0;
+      setDragOffset(0);
       return;
     }
+
     didSwipeRef.current = true;
+    dragOffsetRef.current = dx;
     setDragOffset(dx);
-  }, [isDragging, swipeLocked]);
+  }, [isDragging]);
 
   const onPointerUp = useCallback(() => {
     if (!isDragging) return;
-    setIsDragging(false);
-    const trackWidth = trackRef.current?.offsetWidth || 400;
-    const threshold = trackWidth * 0.15;
 
-    if (Math.abs(dragOffset) > threshold) {
-      const newIdx = dragOffset < 0
+    const finalOffset = dragOffsetRef.current;
+    setIsDragging(false);
+
+    const trackWidth = trackRef.current?.offsetWidth || 400;
+    const threshold = Math.min(56, trackWidth * 0.1);
+
+    if (Math.abs(finalOffset) > threshold) {
+      const newIdx = finalOffset < 0
         ? Math.min(effectiveIndex + 1, pageIds.length - 1)
         : Math.max(effectiveIndex - 1, 0);
       setActivePage(pageIds[newIdx]);
     }
+
+    dragOffsetRef.current = 0;
     setDragOffset(0);
-  }, [isDragging, dragOffset, effectiveIndex, pageIds, setActivePage]);
+  }, [isDragging, effectiveIndex, pageIds, setActivePage]);
 
   if (activePage === 'chat') return <ChatPage />;
 
   const baseTranslate = -(effectiveIndex * 100);
   const dragPct = trackRef.current ? (dragOffset / trackRef.current.offsetWidth) * 100 : 0;
   const translateX = Math.max(-(pageIds.length - 1) * 100, Math.min(0, baseTranslate + dragPct));
-
-  const showSidebar = !isMobile;
-  const showBottomNav = isMobile;
+  const showSidebar = !isMobileLayout;
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Sidebar - desktop only, hidden in phone view */}
+    <div className={`relative min-h-screen ${isMobileLayout ? 'h-[100dvh] overflow-hidden' : ''}`}>
       {showSidebar && (
-        <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-56 flex-col border-r border-border z-50" style={{ background: 'hsl(0 0% 100% / 0.94)', backdropFilter: 'blur(18px)' }}>
+        <nav
+          className="hidden md:flex fixed left-0 top-0 bottom-0 w-56 flex-col border-r border-border z-50"
+          style={{ background: 'hsl(var(--background) / 0.94)', backdropFilter: 'blur(18px)' }}
+        >
           <div className="flex items-center gap-2.5 px-4 py-5 border-b border-border">
             <div className="mc-logo-icon"><Sparkles className="w-4 h-4 text-primary-foreground" /></div>
             <span className="font-display text-base text-foreground">Mentor Connect</span>
@@ -121,11 +133,14 @@ const AppShell = () => {
               const badge = getBadge(id);
               const displayLabel = id === 'notifications' ? 'Notifications' : label;
               return (
-                <button key={id} onClick={() => setActivePage(id)}
-                  className={`mc-nav-item ${activePage === id ? 'active' : ''}`}>
+                <button key={id} onClick={() => setActivePage(id)} className={`mc-nav-item ${activePage === id ? 'active' : ''}`}>
                   <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={activePage === id ? 2.5 : 2} />
                   <span>{displayLabel}</span>
-                  {badge > 0 && <span className="ml-auto bg-destructive text-destructive-foreground text-[11px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">{badge > 9 ? '9+' : badge}</span>}
+                  {badge > 0 && (
+                    <span className="ml-auto bg-destructive text-destructive-foreground text-[11px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">
+                      {badge > 9 ? '9+' : badge}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -133,46 +148,28 @@ const AppShell = () => {
         </nav>
       )}
 
-      {/* Main content */}
-      <main className={`flex-1 overflow-hidden ${showSidebar ? 'md:pl-56' : ''} ${showBottomNav ? 'pb-14' : ''}`} style={{ touchAction: 'pan-y' }}>
-        {/* Swipe dots - mobile/phone view only */}
-        {isMobile && (
-          <div className="swipe-dots py-2">
-            {NAV_ITEMS.map((item, i) => (
-              <button key={item.id} onClick={() => setActivePage(item.id)} className="flex items-center gap-1 group">
-                <div className={`swipe-dot ${effectiveIndex === i ? 'active' : ''}`} />
-              </button>
-            ))}
-          </div>
-        )}
-        {/* Also show dots on real mobile */}
-        {!isMobile && (
-          <div className="swipe-dots py-2 md:hidden">
-            {NAV_ITEMS.map((item, i) => (
-              <button key={item.id} onClick={() => setActivePage(item.id)} className="flex items-center gap-1 group">
-                <div className={`swipe-dot ${effectiveIndex === i ? 'active' : ''}`} />
-              </button>
-            ))}
-          </div>
-        )}
-
+      <main
+        className={`overflow-hidden ${showSidebar ? 'md:pl-56 min-h-screen' : 'h-full pb-16'}`}
+        style={{ touchAction: 'pan-y' }}
+      >
         <div
           ref={trackRef}
-          className={`flex ${isDragging ? '' : 'transition-transform duration-350'}`}
+          className={`flex h-full ${isDragging ? '' : 'transition-transform duration-300'}`}
           style={{
             transform: `translateX(${translateX}%)`,
             transitionTimingFunction: 'var(--ease-smooth)',
-            transitionDuration: isDragging ? '0ms' : '350ms',
+            transitionDuration: isDragging ? '0ms' : '300ms',
           }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
+          onPointerLeave={onPointerUp}
         >
           {pageIds.map((id) => {
             const PageComponent = PAGE_COMPONENTS[id];
             return (
-              <div key={id} className="min-w-full flex-shrink-0">
+              <div key={id} className="min-w-full h-full flex-shrink-0 overflow-y-auto overscroll-y-contain">
                 <PageComponent />
               </div>
             );
@@ -180,34 +177,26 @@ const AppShell = () => {
         </div>
       </main>
 
-      {/* Bottom nav - shown in phone view or real mobile */}
-      {showBottomNav && (
-        <nav className="fixed bottom-0 left-0 right-0 border-t border-border z-50 flex items-stretch h-14" style={{ background: 'hsl(0 0% 100% / 0.94)', backdropFilter: 'blur(18px)' }}>
+      {isMobileLayout && (
+        <nav
+          className="absolute bottom-0 left-0 right-0 border-t border-border z-50 flex items-stretch h-16"
+          style={{ background: 'hsl(var(--background) / 0.96)', backdropFilter: 'blur(18px)' }}
+        >
           {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
             const badge = getBadge(id);
             return (
-              <button key={id} onClick={() => setActivePage(id)}
-                className={`flex flex-col items-center justify-center gap-0.5 flex-1 text-[9px] font-medium transition-colors relative ${activePage === id ? 'text-primary' : 'text-muted-foreground'}`}>
+              <button
+                key={id}
+                onClick={() => setActivePage(id)}
+                className={`flex flex-col items-center justify-center gap-0.5 flex-1 text-[9px] font-medium transition-colors relative ${activePage === id ? 'text-primary' : 'text-muted-foreground'}`}
+              >
                 <Icon className="w-[18px] h-[18px]" strokeWidth={activePage === id ? 2.5 : 2} />
                 <span className="truncate max-w-full leading-tight">{label}</span>
-                {badge > 0 && <span className="absolute top-1 right-1/4 bg-destructive text-destructive-foreground text-[8px] font-bold min-w-[14px] h-3.5 rounded-full flex items-center justify-center px-0.5">{badge > 9 ? '9+' : badge}</span>}
-              </button>
-            );
-          })}
-        </nav>
-      )}
-
-      {/* Bottom nav for real mobile (non-phone-view) */}
-      {!showBottomNav && (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border z-50 flex items-stretch h-14" style={{ background: 'hsl(0 0% 100% / 0.94)', backdropFilter: 'blur(18px)' }}>
-          {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
-            const badge = getBadge(id);
-            return (
-              <button key={id} onClick={() => setActivePage(id)}
-                className={`flex flex-col items-center justify-center gap-0.5 flex-1 text-[9px] font-medium transition-colors relative ${activePage === id ? 'text-primary' : 'text-muted-foreground'}`}>
-                <Icon className="w-[18px] h-[18px]" strokeWidth={activePage === id ? 2.5 : 2} />
-                <span className="truncate max-w-full leading-tight">{label}</span>
-                {badge > 0 && <span className="absolute top-1 right-1/4 bg-destructive text-destructive-foreground text-[8px] font-bold min-w-[14px] h-3.5 rounded-full flex items-center justify-center px-0.5">{badge > 9 ? '9+' : badge}</span>}
+                {badge > 0 && (
+                  <span className="absolute top-1 right-1/4 bg-destructive text-destructive-foreground text-[8px] font-bold min-w-[14px] h-3.5 rounded-full flex items-center justify-center px-0.5">
+                    {badge > 9 ? '9+' : badge}
+                  </span>
+                )}
               </button>
             );
           })}
