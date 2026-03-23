@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
 import { useAppStore } from '@/store/appStore';
 import PersonCard from './PersonCard';
-import { Users, Search } from 'lucide-react';
+import { Users, Search, MapPin } from 'lucide-react';
+import { LOCATIONS } from '@/data/locations';
 
 const MentorsPage = () => {
   const { users, currentUser } = useAppStore();
   const [search, setSearch] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
+  const [locationSearch, setLocationSearch] = useState('');
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
 
   const mentors = users.filter(u => u.role === 'mentor' && u.email_verified && u.email !== currentUser?.email);
-  const locations = [...new Set(mentors.map(m => m.location).filter(Boolean))] as string[];
+  const mentorLocations = [...new Set(mentors.map(m => m.location).filter(Boolean))] as string[];
+
+  const allLocations = [...new Set([...LOCATIONS, ...mentorLocations])].sort();
+  const filteredLocations = locationSearch
+    ? allLocations.filter(l => l.toLowerCase().includes(locationSearch.toLowerCase())).slice(0, 30)
+    : allLocations.slice(0, 30);
 
   const filtered = mentors.filter(m => {
     const matchQ = `${m.first_name} ${m.last_name} ${m.description || ''}`.toLowerCase().includes(search.toLowerCase());
@@ -26,23 +34,48 @@ const MentorsPage = () => {
           </div>
           <div className="flex gap-3 mt-3 flex-wrap">
             <div className="relative flex-1 min-w-[180px]">
-              <Search className="w-4 h-4 text-mc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input className="mc-form-input pl-9" placeholder="Search mentors…" value={search} onChange={e => setSearch(e.target.value)} />
             </div>
-            <select className="mc-form-input w-auto" value={locationFilter} onChange={e => setLocationFilter(e.target.value)}>
-              <option value="">All Locations</option>
-              {locations.map(l => <option key={l} value={l}>{l}</option>)}
-            </select>
+            <div className="relative">
+              <div className="relative">
+                <MapPin className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  className="mc-form-input pl-9 w-48"
+                  placeholder="Filter by location…"
+                  value={locationSearch || locationFilter}
+                  onChange={e => { setLocationSearch(e.target.value); setLocationFilter(''); setShowLocationDropdown(true); }}
+                  onFocus={() => setShowLocationDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowLocationDropdown(false), 200)}
+                />
+                {locationFilter && (
+                  <button onClick={() => { setLocationFilter(''); setLocationSearch(''); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <span className="text-xs">✕</span>
+                  </button>
+                )}
+              </div>
+              {showLocationDropdown && filteredLocations.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto z-50">
+                  {filteredLocations.map(loc => (
+                    <button key={loc}
+                      onMouseDown={() => { setLocationFilter(loc); setLocationSearch(''); setShowLocationDropdown(false); }}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors first:rounded-t-xl last:rounded-b-xl truncate">
+                      {loc}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
       <div className="px-5 py-5 md:px-6">
-        <div className="max-w-[1100px]">
+        <div className="max-w-[1100px] mx-auto">
           {filtered.length === 0 ? (
             <div className="text-center py-12">
-              <Users className="w-12 h-12 text-mc-300 mx-auto mb-3 stroke-[1.5]" />
+              <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3 stroke-[1.5]" />
               <p className="font-medium text-muted-foreground">No mentors found</p>
-              <p className="text-sm text-mc-400 mt-1">Try a different search</p>
+              <p className="text-sm text-muted-foreground mt-1">Try a different search</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
