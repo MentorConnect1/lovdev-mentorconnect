@@ -78,7 +78,7 @@ const MentorsPage = () => {
               <p className="text-sm text-muted-foreground mt-1">Try a different search</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {filtered.map(p => <PersonCard key={p.id} person={p} />)}
             </div>
           )}

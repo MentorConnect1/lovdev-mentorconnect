@@ -78,7 +78,7 @@ const JudgesPage = () => {
               <p className="font-medium text-muted-foreground">No judges found</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {filtered.map(p => <PersonCard key={p.id} person={p} />)}
             </div>
           )}
