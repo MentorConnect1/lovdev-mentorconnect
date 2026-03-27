@@ -112,8 +112,9 @@ const AppShell = () => {
 
   if (activePage === 'chat') return <ChatPage />;
 
+  const pageWidth = trackRef.current?.offsetWidth || 1;
   const baseTranslate = -(effectiveIndex * 100);
-  const dragPct = trackRef.current ? (dragOffset / trackRef.current.offsetWidth) * 100 : 0;
+  const dragPct = (dragOffset / pageWidth) * 100;
   const translateX = Math.max(-(pageIds.length - 1) * 100, Math.min(0, baseTranslate + dragPct));
   const showSidebar = !isMobileLayout;
 
@@ -154,22 +155,22 @@ const AppShell = () => {
       >
         <div
           ref={trackRef}
-          className={`flex h-full ${isDragging ? '' : 'transition-transform duration-300'}`}
+          className={`flex w-full h-full ${isDragging ? '' : 'transition-transform duration-300'}`}
           style={{
             transform: `translateX(${translateX}%)`,
             transitionTimingFunction: 'var(--ease-smooth)',
             transitionDuration: isDragging ? '0ms' : '300ms',
+            willChange: 'transform',
           }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
-          onPointerLeave={onPointerUp}
         >
           {pageIds.map((id) => {
             const PageComponent = PAGE_COMPONENTS[id];
             return (
-              <div key={id} className="min-w-full h-full flex-shrink-0 overflow-y-auto overscroll-y-contain">
+              <div key={id} className="w-full min-w-full h-full flex-shrink-0 overflow-y-auto overscroll-y-contain">
                 <PageComponent />
               </div>
             );
