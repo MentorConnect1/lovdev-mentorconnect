@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAppStore, Resource, isUserAdmin } from '@/store/appStore';
 import { BookOpen, Video, FileText, Link2, ExternalLink, X, Plus, ArrowLeft } from 'lucide-react';
 
@@ -126,9 +127,11 @@ const ResourcesPage = () => {
         </div>
       </div>
 
-      {showCreateForm && (
-        <div className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-4" onClick={() => setShowCreateForm(false)}>
-          <div className="mc-card p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+      {showCreateForm && createPortal(
+        <div className="fixed inset-0 bg-black/40 z-[200] flex items-center justify-center p-4"
+          onClick={() => setShowCreateForm(false)}
+          onPointerDown={e => e.stopPropagation()}>
+          <div className="mc-card p-6 w-full max-w-md" onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-display text-xl text-foreground">New Resource</h2>
               <button onClick={() => setShowCreateForm(false)} className="p-1.5 rounded-lg hover:bg-muted"><X className="w-4 h-4" /></button>
@@ -167,13 +170,15 @@ const ResourcesPage = () => {
                 </div>
               </div>
               <button onClick={handleCreate}
+                onPointerDown={e => e.stopPropagation()}
                 className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:-translate-y-0.5 active:scale-[0.98] transition-all"
                 style={{ boxShadow: '0 4px 18px hsl(221 83% 53% / 0.35)' }}>
                 Create Resource
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <div className="px-5 py-5 md:px-6">
