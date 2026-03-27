@@ -26,10 +26,6 @@ const PhoneViewWrapper: React.FC<PhoneViewWrapperProps> = ({ children }) => {
 
   if (!phoneView) return <PhoneViewContext.Provider value={false}>{children}</PhoneViewContext.Provider>;
 
-  const innerW = 375;
-  const innerH = PHONE_H - 40;
-  const scale = (PHONE_W - 12) / innerW;
-
   return (
     <div className="min-h-screen flex items-center justify-center p-8" style={{ background: 'hsl(220 14% 14%)' }}>
       <div className="relative">
@@ -45,28 +41,15 @@ const PhoneViewWrapper: React.FC<PhoneViewWrapperProps> = ({ children }) => {
         >
           <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-6 rounded-full z-[100]" style={{ background: 'hsl(220 10% 10%)' }} />
           <div
-            className="overflow-y-auto overflow-x-hidden"
+            className="overflow-hidden"
             style={{
               width: PHONE_W - 12,
               height: PHONE_H - 12,
-              paddingTop: 32,
             }}
           >
-            <div
-              className="origin-top-left"
-              style={{
-                width: innerW,
-                minHeight: innerH / scale,
-                transform: `scale(${scale})`,
-                transformOrigin: 'top left',
-              }}
-            >
-              <div style={{ maxWidth: innerW }}>
-                <PhoneViewContext.Provider value={true}>
-                  {children}
-                </PhoneViewContext.Provider>
-              </div>
-            </div>
+            <PhoneViewContext.Provider value={true}>
+              {children}
+            </PhoneViewContext.Provider>
           </div>
         </div>
         <div className="text-center mt-4 text-sm font-medium" style={{ color: 'hsl(220 10% 50%)' }}>
