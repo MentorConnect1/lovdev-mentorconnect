@@ -105,8 +105,9 @@ const ResourcesPage = () => {
             </div>
             {isAdmin && (
               <button
-                onClick={(e) => { e.stopPropagation(); setShowCreateForm(true); }}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:-translate-y-0.5 active:scale-[0.98] transition-all relative z-10"
+                onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowCreateForm(true); }}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:-translate-y-0.5 active:scale-[0.98] transition-all relative z-[60]"
                 style={{ boxShadow: '0 4px 18px hsl(221 83% 53% / 0.35)' }}>
                 <Plus className="w-4 h-4" /> New
               </button>
@@ -183,7 +184,7 @@ const ResourcesPage = () => {
               <p className="font-medium text-muted-foreground">No resources in this category</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {filtered.map(r => {
                 const Icon = TYPE_ICONS[r.type] || TYPE_ICONS.default;
                 const catClass = CAT_COLORS[r.category] || CAT_COLORS.general;
