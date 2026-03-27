@@ -33,16 +33,16 @@ const JudgesPage = () => {
             <Scale className="w-5 h-5 text-primary" />
             <h1 className="font-display text-2xl text-foreground">Judges</h1>
           </div>
-          <div className="flex gap-3 mt-3 flex-wrap">
-            <div className="relative flex-1 min-w-[180px]">
+          <div className="flex flex-col gap-2 mt-3">
+            <div className="relative w-full">
               <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input className="mc-form-input pl-9" placeholder="Search judges…" value={search} onChange={e => setSearch(e.target.value)} />
             </div>
-            <div className="relative">
-              <div className="relative">
+            <div className="relative w-full">
+              <div className="relative w-full">
                 <MapPin className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
-                  className="mc-form-input pl-9 w-48"
+                  className="mc-form-input pl-9 w-full"
                   placeholder="Filter by location…"
                   value={locationSearch || locationFilter}
                   onChange={e => { setLocationSearch(e.target.value); setLocationFilter(''); setShowLocationDropdown(true); }}

@@ -25,7 +25,7 @@ const MessagesPage = () => {
         </div>
       </div>
       <div className="px-5 py-5 md:px-6">
-        <div className="max-w-[700px]">
+        <div className="max-w-[700px] mx-auto">
           {visibleConvos.length === 0 ? (
             <div className="text-center py-12">
               <MessageCircle className="w-12 h-12 text-mc-300 mx-auto mb-3 stroke-[1.5]" />
