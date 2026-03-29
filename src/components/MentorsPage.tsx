@@ -8,6 +8,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 const MentorsPage = () => {
   const { users, currentUser } = useAppStore();
+  const isPhoneView = useIsPhoneView();
+  const isViewportMobile = useIsMobile();
+  const isMobileLayout = isPhoneView || isViewportMobile;
   const [search, setSearch] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [locationSearch, setLocationSearch] = useState('');
@@ -80,7 +83,7 @@ const MentorsPage = () => {
               <p className="text-sm text-muted-foreground mt-1">Try a different search</p>
             </div>
           ) : (
-            <div className={`grid gap-4 ${(useIsPhoneView() || useIsMobile()) ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
+            <div className={`grid gap-4 ${isMobileLayout ? 'grid-cols-1' : 'grid-cols-2'}`}>
               {filtered.map(p => <PersonCard key={p.id} person={p} />)}
             </div>
           )}
