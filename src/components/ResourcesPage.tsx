@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAppStore, Resource, isUserAdmin } from '@/store/appStore';
 import { BookOpen, Video, FileText, Link2, ExternalLink, X, Plus, ArrowLeft, Trash2 } from 'lucide-react';
+import { useIsPhoneView } from './PhoneViewWrapper';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const CAT_COLORS: Record<string, string> = {
   debate: 'bg-secondary text-secondary-foreground',
@@ -20,6 +22,9 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
 
 const ResourcesPage = () => {
   const { resources, currentUser, addResource, deleteResource } = useAppStore();
+  const isPhoneView = useIsPhoneView();
+  const isViewportMobile = useIsMobile();
+  const isMobileLayout = isPhoneView || isViewportMobile;
   const [catFilter, setCatFilter] = useState('');
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -189,7 +194,7 @@ const ResourcesPage = () => {
               <p className="font-medium text-muted-foreground">No resources in this category</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className={`grid gap-4 ${isMobileLayout ? 'grid-cols-1' : 'grid-cols-2'}`}>
               {filtered.map(r => {
                 const Icon = TYPE_ICONS[r.type] || TYPE_ICONS.default;
                 const catClass = CAT_COLORS[r.category] || CAT_COLORS.general;
