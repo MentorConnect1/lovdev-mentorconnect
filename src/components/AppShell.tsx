@@ -58,10 +58,14 @@ const AppShell = () => {
   const currentIndex = pageIds.indexOf(activePage);
   const effectiveIndex = currentIndex >= 0 ? currentIndex : 0;
 
+  const pointerIdRef = useRef<number | null>(null);
+  const swipeLockedRef = useRef(false);
+
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     const target = e.target as HTMLElement;
     if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'range') return;
     if (target.closest('input[type="range"]')) return;
+    if (target.closest('button') || target.closest('a') || target.closest('select') || target.closest('textarea') || target.tagName === 'INPUT') return;
 
     startXRef.current = e.clientX;
     startYRef.current = e.clientY;
@@ -69,7 +73,8 @@ const AppShell = () => {
     setDragOffset(0);
     setIsDragging(true);
     didSwipeRef.current = false;
-    e.currentTarget.setPointerCapture?.(e.pointerId);
+    swipeLockedRef.current = false;
+    pointerIdRef.current = e.pointerId;
   }, []);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
@@ -78,11 +83,18 @@ const AppShell = () => {
     const dx = e.clientX - startXRef.current;
     const dy = e.clientY - startYRef.current;
 
-    if (!didSwipeRef.current && Math.abs(dy) > Math.abs(dx)) {
-      setIsDragging(false);
-      dragOffsetRef.current = 0;
-      setDragOffset(0);
-      return;
+    if (!swipeLockedRef.current) {
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      if (Math.abs(dy) > Math.abs(dx)) {
+        setIsDragging(false);
+        dragOffsetRef.current = 0;
+        setDragOffset(0);
+        return;
+      }
+      swipeLockedRef.current = true;
+      if (pointerIdRef.current !== null) {
+        try { e.currentTarget.setPointerCapture(pointerIdRef.current); } catch {}
+      }
     }
 
     didSwipeRef.current = true;
