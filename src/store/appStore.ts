@@ -101,6 +101,7 @@ interface AppState {
   deleteNotification: (id: string) => void;
   addNotification: (notif: Notification) => void;
   addResource: (resource: Resource) => void;
+  deleteResource: (resourceId: string) => void;
   addReview: (review: Review) => void;
   updateReview: (review: Review) => void;
   deleteReview: (reviewId: string) => void;
@@ -265,6 +266,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   addResource: (resource) => {
     const resources = [...get().resources, resource];
+    localStorage.setItem('mc_resources', JSON.stringify(resources));
+    set({ resources });
+  },
+
+  deleteResource: (resourceId) => {
+    const resources = get().resources.filter(r => r.id !== resourceId);
     localStorage.setItem('mc_resources', JSON.stringify(resources));
     set({ resources });
   },
