@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAppStore, Resource, isUserAdmin } from '@/store/appStore';
-import { BookOpen, Video, FileText, Link2, ExternalLink, X, Plus, ArrowLeft } from 'lucide-react';
+import { BookOpen, Video, FileText, Link2, ExternalLink, X, Plus, ArrowLeft, Trash2 } from 'lucide-react';
 
 const CAT_COLORS: Record<string, string> = {
   debate: 'bg-secondary text-secondary-foreground',
@@ -19,7 +19,7 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
 };
 
 const ResourcesPage = () => {
-  const { resources, currentUser, addResource } = useAppStore();
+  const { resources, currentUser, addResource, deleteResource } = useAppStore();
   const [catFilter, setCatFilter] = useState('');
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -189,7 +189,7 @@ const ResourcesPage = () => {
               <p className="font-medium text-muted-foreground">No resources in this category</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filtered.map(r => {
                 const Icon = TYPE_ICONS[r.type] || TYPE_ICONS.default;
                 const catClass = CAT_COLORS[r.category] || CAT_COLORS.general;
@@ -212,9 +212,17 @@ const ResourcesPage = () => {
                           <span className="mc-badge border border-border text-primary bg-transparent">{r.type}</span>
                         </div>
                         {r.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2 leading-relaxed">{r.description}</p>}
-                        <div className="flex gap-2 mt-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                           {r.posted_by_name && <span>By {r.posted_by_name}</span>}
                           <span>{dateStr}</span>
+                          {isAdmin && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); deleteResource(r.id); }}
+                              className="ml-auto p-1 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
